@@ -45,7 +45,7 @@ eval0 env (App e1 e2) = let val1 = eval0 env e1
                                 FunVal env' n body ->
                                     eval0 (Map.insert n val2 env') body
 
-{- Add Identiy monad -}
+{- Add Identity monad -}
 
 type Eval1 a = Identity a
 
@@ -82,7 +82,7 @@ runEval2 ev = runIdentity (runExceptT ev)
 
 eval2a :: Env -> Exp -> Eval2 Value
 eval2a env (Lit i) = return $ IntVal i
-eval2a env (Var n) = return $ fromJust (Map.lookup n env)
+eval2a env (Var n) = return $ fromJust $ Map.lookup n env
 eval2a env (Plus e1 e2) = do IntVal i1 <- eval2a env e1
                              IntVal i2 <- eval2a env e2
                              return $ IntVal (i1 + i2)
@@ -144,11 +144,11 @@ eval2 env (App e1 e2) = do val1 <- eval2 env e1
 
 {- Add ReaderT -}
 
-class MonadTrans t where
-    lift :: Monad m => m a -> t m a
-
-instance MonadTrans (ReaderT r) where
-    lift m = ReaderT $ \_ -> m
+--class MonadTrans t where
+--    lift :: Monad m => m a -> t m a
+--
+--instance MonadTrans (ReaderT r) where
+--    lift m = ReaderT $ \_ -> m
 
 type Eval3 a = ReaderT Env (ExceptT String Identity) a
 
@@ -212,6 +212,13 @@ eval4 (App e1 e2) = do tick
 
 {- Add WriterT -}
 
+-- ReaderT r        m a
+-- ExceptT String   m
+-- WriterT [String] m a
+-- StateT  s        m a
+-- Identity           a
+
+
 type Eval5 a = ReaderT Env (ExceptT String (WriterT [String] (StateT Integer Identity))) a
 
 runEval5 :: Env -> Integer -> Eval5 a -> ((Either String a, [String]), Integer)
@@ -221,7 +228,7 @@ eval5 :: Exp -> Eval5 Value
 eval5 (Lit i) = do tick; return $ IntVal i
 eval5 (Var n) = do tick
                    env <- ask
---                   tell [show n]
+--                   tell [n]
                    case Map.lookup n env of
                        Nothing -> ReaderT $ \_ -> throwE $ "unbound variable: " ++ n
                        Just x -> return x
