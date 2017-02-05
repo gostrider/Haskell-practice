@@ -15,13 +15,13 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     ReaderM
-                     , MTrans
-                     , EachT
+  exposed-modules:     IdT
   build-depends:       base >= 4.7 && < 5
                      , mtl
                      , containers
                      , transformers
+                     , filepath
+                     , directory
   default-language:    Haskell2010
 
 executable real-world-haskell-exe
@@ -33,6 +33,8 @@ executable real-world-haskell-exe
                      , mtl
                      , containers
                      , transformers
+                     , filepath
+                     , directory
   default-language:    Haskell2010
 
 test-suite real-world-haskell-test

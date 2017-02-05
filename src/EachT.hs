@@ -31,10 +31,8 @@ runExcept' :: WithE a -> Either String a
 runExcept' m = runIdentity' $ runExceptT m
 
 transExcept :: Maybe CustomResult -> WithE CustomResult
-transExcept x = do
-    case x of
-        Nothing -> throwE "error"
-        Just x -> return x
+transExcept Nothing = throwE "error"
+transExcept (Just x) = return  x
 
 {- Transform with WriterT -}
 
@@ -52,12 +50,8 @@ transWriter x = do
 
 {- Transform with ReaderT -}
 
---type WithEWR a = ReaderT Int (WriterT [String] (ExceptT String Identity)) a
---
---runReader' :: Int -> WithEWR a -> Either String (a, [String])
---runReader' env m =  runWriter' $ runReaderT m env
---
---transReader :: WithEWR CustomResult
---transReader = do
---    readInput <- ask
---    return $ ResVal readInput
+type WithER a = ReaderT Int (ExceptT String Identity) a
+
+runReader' :: Int -> WithER a -> Either String a
+runReader' env m = runIdentity $ runExceptT $ runReaderT m env
+
