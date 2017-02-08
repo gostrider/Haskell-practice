@@ -2,6 +2,10 @@ module MaybeT where
 
 import Control.Monad (liftM, ap)
 
+{- MaybeT is isomorphic to runMaybeT
+,    MaybeT :: m (MaybeT a) -> MaybeT m a
+, runMaybeT :: MaybeT m a -> m (MaybeT a)
+-}
 newtype MaybeT m a = MaybeT {
     runMaybeT :: m (Maybe a)
 }
