@@ -1,6 +1,6 @@
-module EitherIO where
-
 {-# LANGUAGE OverloadedStrings #-}
+
+module EitherIO where
 
 import Data.Text
 import Data.Map as Map
@@ -12,29 +12,88 @@ data LoginError = InvalidEmail
                 | WrongPassword
                   deriving Show
 
-data EitherIO e a = EitherIO {
-    runEitherIO :: IO (Either e a)
+data ExceptIO e a = ExceptIO {
+    runExceptIO :: IO (Either e a)
 }
 
-instance Functor (EitherIO e) where
-    fmap f = EitherIO . fmap (fmap f) . runEitherIO
+instance Functor (ExceptIO e) where
+  fmap f = ExceptIO . fmap (fmap f) . runExceptIO
 
-instance Applicative (EitherIO e) where
-    pure = EitherIO . return . Right
-    (<*>) f x = EitherIO $ liftA2 (<*>) (runEitherIO f) (runEitherIO x)
+instance Applicative (ExceptIO e) where
+  pure = ExceptIO . return . Right
+  (<*>) f x = ExceptIO $ liftA2 (<*>) (runExceptIO f) (runExceptIO x)
 
-instance Monad (EitherIO e) where
-    return = pure
-    (>>=) x f = EitherIO $ runEitherIO x >>= either (return . Left) (runEitherIO . f)
+instance Monad (ExceptIO e) where
+  return = pure
+  (>>=) x f = ExceptIO $ runExceptIO x >>= either (return . Left) (runExceptIO . f)
 
---getToken :: EitherIO LoginError Text
+liftEither :: Either e a -> ExceptIO e a
+liftEither = ExceptIO . return
+
+liftIO :: IO a -> ExceptIO e a
+liftIO = ExceptIO . fmap Right
+
+throwE :: e -> ExceptIO e a
+throwE = liftEither . Left
+
+catchE :: ExceptIO e a -> (e -> ExceptIO e a) -> ExceptIO e a
+catchE throwing handler =
+  ExceptIO $ do
+    result <- runExceptIO throwing
+    case result of
+      Left failure -> runExceptIO $ handler failure
+      success -> reutrn success
+
+users :: Map Text Text
+users = Map.fromList [ ("example.com", "qwerty123")
+                     , ("localhost", "password")
+                     ]
+
+wrongPasswordHandler :: LoginError -> ExceptIO LoginError Text
+wrongPasswordHandler WrongPassword = do
+  liftIO $ T.putStrLn "Wrong Password, one more chance."
+  userLogin
+wrongPasswordHandler err = throw err
+
+--getToken :: ExceptIO LoginError Text
 --getToken = do
 --    T.putStrLn "Enter email address"
 --    input <- T.getLine
 --    return (getDomain input)
 
-getToken :: EitherIO LoginError Text
+getDomain :: Text -> Either LoginError Text
+getDomain email =
+  case splitOn "@" email of
+    [name, domain] -> Right domain
+    _              -> Left InvalidEmail
+
+getToken :: ExceptIO LoginError Text
 getToken = do
-  EitherIO $ fmap Right (T.putStrLn "Enter email address:")
-  input <- EitherIO (fmap Right T.getLine)
-  EitherIO $ return (getDomain input)
+  ExceptIO $ fmap Right $ T.putStrLn "Enter email address:"
+  input <- ExceptIO $ fmap Right T.getLine
+  ExceptIO $ return $ getDomain input
+
+userLogin :: ExceptIO LoginError Text
+userLogin = do
+  token    <- getToken
+  userpwd  <- maybe (throwE NoSuchUser) return (Map.lookup token users)
+  password <- liftIO $ T.putStrLn "Enter your password: " >> T.getLine
+
+  if userpwd == password then return token else throwE WrongPassword
+
+parseResult :: Either LoginError Text -> Text
+parseResult (Right token)        = append "Logged in with token: " token
+parseResult (Left InvalidEmail)  = "Invalid email address entered."
+parseResult (Left NoSuchUser)    = "No user with that email exists."
+parseResult (Left WrongPassword) = "Wrong password."
+
+parseError :: LoginError -> Text
+parseError WrongPassword = "Wrong password, one more time."
+parseError NoSuchUser = "No user with that email exists."
+parseError InvalidEmail = "Invalid email address entered."
+
+printResult :: Either LoginError Text -> IO ()
+printResult = T.putStrLn . parseResult
+
+printError :: LoginError -> ExceptIO LoginError a
+printError = (liftIO . T.putStrLn . printError) >> throwE
