@@ -42,7 +42,7 @@ catchE throwing handler =
     result <- runExceptIO throwing
     case result of
       Left failure -> runExceptIO $ handler failure
-      success -> reutrn success
+      success -> return success
 
 users :: Map Text Text
 users = Map.fromList [ ("example.com", "qwerty123")
@@ -53,7 +53,7 @@ wrongPasswordHandler :: LoginError -> ExceptIO LoginError Text
 wrongPasswordHandler WrongPassword = do
   liftIO $ T.putStrLn "Wrong Password, one more chance."
   userLogin
-wrongPasswordHandler err = throw err
+wrongPasswordHandler err = throwE err
 
 --getToken :: ExceptIO LoginError Text
 --getToken = do
@@ -81,6 +81,12 @@ userLogin = do
 
   if userpwd == password then return token else throwE WrongPassword
 
+loginDialogue :: ExceptIO LoginError ()
+loginDialogue = do
+  let retry = userLogin `catchE` wrongPasswordHandler
+  token <- retry `catchE` printError
+  liftIO $ T.putStrLn $ append "Logged in with token: " token
+
 parseResult :: Either LoginError Text -> Text
 parseResult (Right token)        = append "Logged in with token: " token
 parseResult (Left InvalidEmail)  = "Invalid email address entered."
@@ -89,11 +95,16 @@ parseResult (Left WrongPassword) = "Wrong password."
 
 parseError :: LoginError -> Text
 parseError WrongPassword = "Wrong password, one more time."
-parseError NoSuchUser = "No user with that email exists."
-parseError InvalidEmail = "Invalid email address entered."
+parseError NoSuchUser    = "No user with that email exists."
+parseError InvalidEmail  = "Invalid email address entered."
 
 printResult :: Either LoginError Text -> IO ()
 printResult = T.putStrLn . parseResult
 
 printError :: LoginError -> ExceptIO LoginError a
-printError = (liftIO . T.putStrLn . printError) >> throwE
+printError err = do
+  liftIO . T.putStrLn $ parseError err
+  throwE err
+
+
+
