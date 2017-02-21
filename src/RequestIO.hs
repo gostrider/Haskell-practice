@@ -3,7 +3,11 @@
 
 module RequestIO (References (..), Payload (..), requestSample) where
 
-import Data.Aeson
+import Data.Aeson ( FromJSON(..), ToJSON(..)
+                  , Object(..), Value(..)
+                  , object, (.=), (.:)
+                  )
+
 import Network.HTTP.Simple
 import Data.Text (Text(..))
 import Control.Monad (liftM)
