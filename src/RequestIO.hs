@@ -100,8 +100,8 @@ requestSample = do
     print $ show (getResponseBody response :: RequestResp)
     putStrLn $ show $ getResponseStatusCode response
     print $ getResponseHeader "Content-Type" response
-    {-
+{-
     L8.putStrLn $ getResponseBody response
 --     For parsing JSON
     S8.putStrLn $ Yaml.encode (getResponseBody response :: Value)
-    -}
+-}

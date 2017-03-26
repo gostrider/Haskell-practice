@@ -30,6 +30,7 @@ bindMT x f = MaybeT $ do
         Nothing -> return Nothing
         Just y -> runMaybeT (f y)
 
+
 instance (Monad m) => Functor (MaybeT m) where
     fmap = liftM
 
