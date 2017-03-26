@@ -3,7 +3,11 @@
 
 module RequestIO (References (..), Payload (..), requestSample) where
 
-import Data.Aeson
+import Data.Aeson ( FromJSON(..), ToJSON(..)
+                  , Object(..), Value(..)
+                  , object, (.=), (.:), (.:?)
+                  )
+
 import Network.HTTP.Simple
 import Data.Text (Text(..))
 import Control.Monad (liftM)
@@ -34,7 +38,7 @@ data RequestResp = RequestResp { resp :: [SendMessageResp]
                                } deriving Show
 
 data SendMessageResp = SendMessageResp { statusCode      :: Int
-                                       , msgID           :: MessageID
+                                       , msgID           :: Maybe MessageID
                                        , xDelayTime      :: Maybe UTCTime
                                        , recipientUserID :: String
                                        } deriving Show
@@ -49,6 +53,7 @@ instance ToJSON Payload where
 
 instance FromJSON RequestResp where
     parseJSON (Object v) = RequestResp <$> v .: "resp"
+    parseJSON _          = fail "failed to parse mis-matched type"
 
 instance FromJSON MessageID where
     parseJSON (String s) = return $ Succ s
@@ -57,7 +62,7 @@ instance FromJSON MessageID where
 
 instance FromJSON SendMessageResp where
     parseJSON (Object v) = SendMessageResp <$> v .: "status_code"
-                                           <*> v .: "msg_id"
+                                           <*> v .:? "msg_id"
                                            <*> (liftM parseUTCTime $ v .: "x_delay_time")
                                            <*> v .: "recipient_user_id"
 
@@ -95,12 +100,12 @@ payload =
 
 requestSample :: IO ()
 requestSample = do
-    let request = setRequestBodyJSON payload "POST http://staging-chat.chaatz.com:4000/v1/chat/_send_message"
+    let request = setRequestBodyJSON payload "POST http://localhost:4000/v1/chat/_send_message"
     response <- httpJSON request
     print $ show (getResponseBody response :: RequestResp)
+{-
     putStrLn $ show $ getResponseStatusCode response
     print $ getResponseHeader "Content-Type" response
-{-
     L8.putStrLn $ getResponseBody response
 --     For parsing JSON
     S8.putStrLn $ Yaml.encode (getResponseBody response :: Value)
