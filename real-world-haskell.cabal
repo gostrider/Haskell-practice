@@ -15,9 +15,10 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     RequestIO
+  exposed-modules:     RequestIO, IdT
   build-depends:       base >= 4.7 && < 5
                      , aeson, bytestring, http-conduit, text, time, yaml
+                     , mtl, directory, filepath
   default-language:    Haskell2010
 
 executable real-world-haskell-exe

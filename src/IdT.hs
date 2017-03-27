@@ -11,6 +11,7 @@ listDirectory :: FilePath -> IO [String]
 listDirectory = liftM (filter notDots) . getDirectoryContents
     where notDots p = p /= "." && p /= ".."
 
+-- runWriterT $ countEntries "path"
 countEntries :: FilePath -> WriterT [(FilePath, Int)] IO ()
 countEntries path = do
     contents <- liftIO . listDirectory $ path
@@ -25,6 +26,7 @@ myName step = do
     name <- ask
     return (step ++ ", I am " ++ name)
 
+-- runReader localExample "string"
 localExample :: Reader String (String, String, String)
 localExample = do
     a <- myName "First"
