@@ -35,12 +35,15 @@ set (x, y) x' = (x', y)
 {-
 Laws
 
+Get back what you set
 set -> get = set
 get . set = id
 
+Setting what you get is identity
 get -> set = id
 set s $ get s = s
 
+Setting twice is the same as setting last
 set (set s a) b = set s b
 -}
 
@@ -49,6 +52,7 @@ Algebric Structure of Lens
 
 "this" is OO
 s -> (a, b -> t)
+rewrite as:
 s -> Store a s
 
 -}
