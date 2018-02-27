@@ -5,6 +5,7 @@ data Reader r a = Reader { runReader :: r -> a }
 
 instance Functor (Reader r) where
   fmap f (Reader g) = Reader $ f . g
+  -- fmap f mr = Reader $ \e -> f $ runReader mr e
 
 
 instance Applicative (Reader r) where
@@ -23,9 +24,9 @@ ask = Reader id
 
 asks :: (r -> a) -> Reader r a
 asks = Reader
--- asks f = Reader f
 -- OR:
--- asks f = ask >>= \x -> return $ f x
+-- asks f = Reader f
+-- asks f = ask >>= return . f
 
 
 local :: (r -> r) -> Reader r a -> Reader r a
