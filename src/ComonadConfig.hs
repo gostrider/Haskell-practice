@@ -1,6 +1,3 @@
-import Prelude hiding ((.))
-
-
 type Option = String
 
 
@@ -13,7 +10,7 @@ configBuilder = MkConfig
 
 
 defaultConfig :: [Option] -> Config
-defaultConfig opts = MkConfig $ ["-Wall"] ++ opts
+defaultConfig opts = MkConfig $ "-Wall" : opts
 
 
 profile :: ([Option] -> Config) -> Config
@@ -29,19 +26,16 @@ extract builder = builder []
 
 
 extend :: (([Option] -> Config) -> Config) -> ([Option] -> Config) -> ([Option] -> Config)
-extend setter builder =
-    \opts2 -> setter $ \opts1 -> builder $ opts1 ++ opts2
+extend setter builder opts2 = setter (\opts1 -> builder (opts1 ++ opts2))
 
 
 -- simulate return self as return a function to accept next builder
 profile'  :: ([Option] -> Config) -> ([Option] -> Config)
-profile' builder =
-    \options -> builder $ ["-prof", "-auto-all"] ++ options
+profile' builder options = builder (["-prof", "-auto-all"] ++ options)
 
 
 goFaster' :: ([Option] -> Config) -> ([Option] -> Config)
-goFaster' builder =
-    \options -> builder $ ["-O2"] ++ options
+goFaster' builder options = builder ("-O2" : options)
 
 
 (#) :: a -> (a -> b) -> b
@@ -52,10 +46,7 @@ infixl 0 #
 
 config0 :: Config
 config0 =
-  defaultConfig
-    # profile'
-    # goFaster'
-    # extract
+  defaultConfig # profile' # goFaster' # extract
 
 config1 :: Config
 config1 =
