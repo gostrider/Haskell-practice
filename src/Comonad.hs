@@ -1,9 +1,17 @@
 class Functor w => Comonad w where
+    -- co-unit
+    -- return the current value
     extract :: w a -> a
 
+    -- cojoin
+    -- all possible states
     duplicate :: w a -> w (w a)
     duplicate = extend id
 
+    -- co-bind
+    -- allState[state1[x], ...]
+    -- extend = f . duplicate ->
+    -- return all current states and apply f
     extend :: (w a -> b) -> w a -> w b
     extend f = fmap f . duplicate
 
