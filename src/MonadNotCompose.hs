@@ -16,10 +16,23 @@ instance (Functor f, Functor g) => Functor (Compose f g) where
      lift (a -> b) -> f (a -> b), then apply f to fgx
 
      Compose fgx is Data Constructor, which is runCompose
+
+     runCompose $ fmap (+1) (Compose [Just 1])
+     runCompose $ Compose fmap (fmap (+1)) [Just 1]
+     runCompose $ Compose fmap (\x -> fmap (+1) x) [Just 1]
+     runCompose $ Compose fmap (\x -> fmap (\y -> y + 1) (Just 1)) [Just 1]
+
+     #output [Just 1] -> [Just 2] or [[1]] -> [[2]]
   -}
-  fmap f (Compose fgx) = Compose (fmap (fmap f) fgx)
+  fmap f (Compose fgx) = Compose $ fmap (fmap f) fgx
 
 
 instance (Applicative f, Applicative g) => Applicative (Compose f g) where
-  pure a                      = Compose (pure (pure a))
-  Compose fgf <*> Compose fgx = Compose ((<*>) <$> fgf <*> fgx)
+  pure a                      = Compose $ pure $ pure a
+  {-
+    runCompose $ Compose [[(+1)]] <*> Compose [[1]]
+    runCompose $ fmap (<*>) [[(+1)]] <*> [[1]]
+    #output [Just 2] or [[2]]
+  -}
+  Compose fgf <*> Compose fgx = Compose $ (fmap (<*>) fgf) <*> fgx
+  --                          = Compose $ (<*>)  <$>  fgf  <*> fgx
