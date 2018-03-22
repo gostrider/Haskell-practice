@@ -1,4 +1,10 @@
+{-# LANGUAGE MultiParamTypeClasses #-}
+
 module MonadNotCompose where
+
+import Control.Monad (join)
+import Data.Traversable (Traversable, sequence)
+
 
 {-
    Try to validate 2 Generic types,
@@ -36,3 +42,27 @@ instance (Applicative f, Applicative g) => Applicative (Compose f g) where
   -}
   Compose fgf <*> Compose fgx = Compose $ (fmap (<*>) fgf) <*> fgx
   --                          = Compose $ (<*>)  <$>  fgf  <*> fgx
+
+
+class Commute f g where
+  commute :: g (f x) -> f (g x)
+
+
+-- instance (Monad f, Monad g, Commute f g) => Monad (Compose f g)
+
+
+-- Monad Associativity Law :: m >>= f >>= g == m >>= (\x -> f x >>= g)
+
+(>>>=) :: (Monad f, Monad g, Traversable g) => f (g a) -> (a -> f (g b)) -> f (g b)
+m >>>= k = do
+  a <- m
+  b <- sequence $ fmap k a
+  return $ join b
+
+
+monad_assoc :: IO ()
+monad_assoc = do
+  unused <- getLine
+  ans    <- getLine
+  putStrLn ans
+
