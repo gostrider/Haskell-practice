@@ -34,14 +34,38 @@ instance (Functor f, Functor g) => Functor (Compose f g) where
 
 
 instance (Applicative f, Applicative g) => Applicative (Compose f g) where
-  pure a                      = Compose $ pure $ pure a
+  pure a = Compose $ pure $ pure a
   {-
     runCompose $ Compose [[(+1)]] <*> Compose [[1]]
     runCompose $ fmap (<*>) [[(+1)]] <*> [[1]]
     #output [Just 2] or [[2]]
   -}
-  Compose fgf <*> Compose fgx = Compose $ (fmap (<*>) fgf) <*> fgx
-  --                          = Compose $ (<*>)  <$>  fgf  <*> fgx
+  Compose fgf <*> Compose fgx = Compose $ fmap (<*>) fgf <*> fgx
+  --                          = Compose $ (<*>) <$>  fgf <*> fgx
+
+
+{-
+  (<*>) :: Applicative f => f (s -> t) -> f s -> f t
+  (>>=) :: Monad       m => m a -> (a -> m b) -> m b
+
+  In (>>=), m b is determined by a;
+  but in (<*>) does not.
+-}
+
+-- mif (return True) (return True) (return False)
+-- mif (pure True) (pure True) (error "bad")
+mif :: Monad m => m Bool -> m x -> m x -> m x
+mif mbool mtrue mfalse = do
+  b <- mbool
+  if b then mtrue else mfalse
+
+
+-- aif (pure True) (pure True) (error "bad")
+-- Failed!
+aif :: Applicative a => a Bool -> a x -> a x -> a x
+aif abool atrue afalse = 
+  let cond b t f = if b then t else f
+  in pure cond <*> abool <*> atrue <*> afalse
 
 
 class Commute f g where
@@ -49,7 +73,6 @@ class Commute f g where
 
 
 -- instance (Monad f, Monad g, Commute f g) => Monad (Compose f g)
-
 
 -- Monad Associativity Law :: m >>= f >>= g == m >>= (\x -> f x >>= g)
 
