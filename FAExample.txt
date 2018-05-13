@@ -1,0 +1,52 @@
+For every application, last operation can be fmap
+
+oslash traslation
+(+1) <$> Just 1                  == Just(1).map(lambda x: x+1)
+Just $ (+1) 1                    == Just((lambda x: x+1)(1))
+Just (+1) <*> Just 1             == Just(lambda x: x+1) * (Just 1)
+Just (+) <*> (Just 1) <*> Just 1 == Just(lambda x: lambda y: x + y) * Just(1) * Just(1)
+liftA2 (+) (Just 1) (Just 1)     == Just(1).lift_a2(lambda x, y: x + y, Just(1))
+
+(+) <$> Just 1 <*> Just 1
+
+fmap (+) (Just 1) <*> Just 1
+
+Just (+) <*> Just 1 <*> Just 1
+
+
+Map
+fmap (+1) [1..5]
+List comprehension
+[(+1) x | x <- [1..5]] == ([(+1)] <*> [1..5])
+Monad comprehension
+[1..5] >>= (\x -> return $ x + 1)
+
+mif :: Monad m => m Bool -> m x -> m x -> m x
+mif mb mt mf = do
+  b <- mb
+  if b then mt else mf
+
+
+aif :: Applicative a => a Bool -> a x -> a x -> a x
+aif ab at af =
+  let cond b t f = if b then t else f
+  in pure cond <*> ab <*> at <*> af
+
+
+mif (pure True) (pure "hello") (error "bad")
+-- "hello"
+
+mif (pure True) (pure 0) [1,2]
+-- [0]
+
+
+aif (pure True) (pure "hello") (error "bad")
+-- Exception
+
+aif (pure True) (pure 0) [1, 2]
+-- [0,0]
+
+As example,
+Applicative force strictness when evaluation
+while Monad does not.
+
